@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Graham Checkout</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f5f5;
+      --surface: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #6b7280;
+      --border: #e5e7eb;
+      --accent: #006aff;
+      --accent-hover: #0052cc;
+      --success: #24b47e;
+      --success-hover: #1a9a68;
+      --danger: #e25950;
+      --danger-hover: #c9443c;
+      --radius: 8px;
+      --radius-lg: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+      --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-text-size-adjust: 100%;
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      position: relative;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    #admin-btn {
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px 12px;
+      cursor: pointer;
+      font-family: var(--font);
+    }
+
+    #admin-btn:active { background: var(--bg); }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px;
+      height: calc(100vh - 50px);
+      height: calc(100dvh - 50px);
+    }
+
+    /* ===== Cart Section (Left Panel) ===== */
+
+    .cart-section {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .cart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cart-header h2 { font-size: 16px; font-weight: 600; }
+
+    #item-count {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .cart-items table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .cart-items thead th {
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cart-items thead th:nth-child(2),
+    .cart-items thead th:nth-child(3),
+    .cart-items thead th:nth-child(4) { text-align: right; }
+
+    .cart-items thead th:last-child { text-align: center; width: 48px; }
+
+    .cart-items tbody td {
+      padding: 12px;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: middle;
+    }
+
+    .cart-items tbody td:nth-child(2),
+    .cart-items tbody td:nth-child(3),
+    .cart-items tbody td:nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .cart-items tbody td:last-child { text-align: center; }
+
+    .cart-items tbody tr:hover { background: #fafafa; }
+
+    .empty-cart {
+      text-align: center !important;
+      color: var(--text-secondary);
+      padding: 48px 12px !important;
+      font-size: 15px !important;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .delete-btn:hover, .delete-btn:active {
+      color: var(--danger);
+      background: rgba(226, 89, 80, 0.08);
+    }
+
+    .cart-totals {
+      border-top: 1px solid var(--border);
+      padding: 12px 20px;
+      background: var(--surface);
+    }
+
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .totals-row.total {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      padding-top: 8px;
+      margin-top: 4px;
+      border-top: 1px solid var(--border);
+    }
+
+    .totals-row span:last-child { font-variant-numeric: tabular-nums; }
+
+    /* ===== Actions Section (Right Panel) ===== */
+
+    .actions-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 24px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .total-display {
+      text-align: center;
+      padding: 24px 0 16px;
+    }
+
+    .total-label {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .total-amount {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .actions-spacer { flex: 1; }
+
+    /* ===== Buttons ===== */
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--font);
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 48px;
+    }
+
+    .btn:active:not(:disabled) { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-lg { padding: 16px 24px; font-size: 16px; min-height: 56px; }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-accent:hover:not(:disabled) { background: var(--accent-hover); }
+
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+    }
+    .btn-success:hover:not(:disabled) { background: var(--success-hover); }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+    .btn-danger:hover:not(:disabled) { background: var(--danger-hover); }
+
+    .btn-outline {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover:not(:disabled) { background: var(--bg); }
+
+    .btn-sm { padding: 8px 14px; font-size: 13px; min-height: 36px; }
+
+    /* ===== Dialogs ===== */
+
+    dialog {
+      border: none;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 24px;
+      max-width: 480px;
+      width: calc(100vw - 48px);
+      font-family: var(--font);
+      color: var(--text);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.4);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+    }
+
+    dialog h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    dialog h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 20px 0 12px;
+    }
+
+    .dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .dialog-header h2 { margin-bottom: 0; }
+
+    .dialog-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      line-height: 1;
+    }
+
+    .dialog-close:hover { background: var(--bg); color: var(--text); }
+
+    .dialog-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    /* ===== Manual Entry ===== */
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 15px;
+      font-family: var(--font);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .form-group input:focus { border-color: var(--accent); }
+    .form-group input[readonly] { background: var(--bg); color: var(--text-secondary); }
+
+    /* ===== Camera Scanner ===== */
+
+    #camera-dialog { max-width: 560px; padding: 16px; }
+
+    #camera-viewfinder {
+      width: 100%;
+      min-height: 300px;
+      background: #000;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    #camera-viewfinder video { width: 100% !important; border-radius: var(--radius); }
+
+    .camera-hint {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 12px;
+    }
+
+    /* ===== Payment Dialog ===== */
+
+    #payment-dialog { max-width: 420px; text-align: center; }
+
+    .payment-total {
+      font-size: 42px;
+      font-weight: 700;
+      margin: 8px 0 24px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .payment-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .payment-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 2px solid var(--border);
+      text-align: center;
+    }
+
+    .rfid-option {
+      border-color: var(--accent);
+      background: rgba(0, 106, 255, 0.03);
+      animation: rfidPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes rfidPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0, 106, 255, 0.25); }
+      50% { box-shadow: 0 0 0 8px rgba(0, 106, 255, 0); }
+    }
+
+    .option-icon { font-size: 28px; line-height: 1; }
+    .option-icon svg { width: 32px; height: 32px; }
+
+    .option-text { font-size: 15px; font-weight: 600; }
+
+    .option-hint {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .qr-option {
+      cursor: pointer;
+      background: var(--surface);
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .qr-option:hover { border-color: var(--accent); background: rgba(0, 106, 255, 0.03); }
+
+    .payment-divider {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ===== Result Dialog ===== */
+
+    #result-dialog { max-width: 380px; text-align: center; }
+
+    .result-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 auto 16px;
+    }
+
+    #result-dialog.success .result-icon {
+      background: rgba(36, 180, 126, 0.1);
+      color: var(--success);
+    }
+
+    #result-dialog.error .result-icon {
+      background: rgba(226, 89, 80, 0.1);
+      color: var(--danger);
+    }
+
+    #result-message {
+      font-size: 14px;
+      color: var(--text-secondary);
+      white-space: pre-line;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    /* ===== Admin Dialog ===== */
+
+    #admin-dialog { max-width: 520px; }
+
+    .admin-card-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .card-info { display: flex; gap: 16px; align-items: center; }
+
+    .card-id {
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+      font-size: 14px;
+      font-weight: 600;
+      background: var(--bg);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .card-balance {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--success);
+    }
+
+    .card-actions { display: flex; align-items: center; gap: 12px; }
+
+    .qr-container {
+      border-radius: var(--radius);
+      overflow: hidden;
+      line-height: 0;
+    }
+
+    .qr-container img { display: block; }
+    .qr-container canvas { display: block; }
+
+    /* ===== Responsive ===== */
+
+    @media (max-width: 768px) {
+      main {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+      }
+      .actions-section { order: -1; }
+      .total-display { padding: 12px 0 8px; }
+      .total-amount { font-size: 36px; }
+    }
+
+    @media (max-width: 480px) {
+      header { padding: 10px 16px; }
+      main { padding: 8px; gap: 8px; }
+      .actions-section { padding: 16px; }
+    }
+
+    /* ===== Utilities ===== */
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header role="banner">
+    <h1>Graham Checkout</h1>
+    <button type="button" id="admin-btn" aria-label="Admin: manage test data and gift cards">Admin</button>
+  </header>
+
+  <main>
+    <section class="cart-section" aria-label="Shopping cart">
+      <div class="cart-header">
+        <h2>Current Sale</h2>
+        <span id="item-count" aria-live="polite">0 items</span>
+      </div>
+      <div class="cart-items" role="region" aria-label="Cart items" tabindex="0">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Item</th>
+              <th scope="col">Price</th>
+              <th scope="col">Qty</th>
+              <th scope="col">Total</th>
+              <th scope="col"><span class="sr-only">Remove</span></th>
+            </tr>
+          </thead>
+          <tbody id="cart-body">
+            <tr><td colspan="5" class="empty-cart">Scan an item to begin</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cart-totals" aria-label="Cart totals">
+        <div class="totals-row"><span>Subtotal</span><span id="subtotal">$0.00</span></div>
+        <div class="totals-row"><span>Tax (8%)</span><span id="tax">$0.00</span></div>
+        <div class="totals-row total"><span>Total</span><span id="total">$0.00</span></div>
+      </div>
+    </section>
+
+    <section class="actions-section" aria-label="Actions">
+      <div class="total-display">
+        <div class="total-label">Total</div>
+        <div class="total-amount" id="total-display" aria-hidden="true">$0.00</div>
+      </div>
+      <div class="actions-spacer"></div>
+      <button type="button" id="camera-btn" class="btn btn-accent btn-lg">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Scan with Camera
+      </button>
+      <button type="button" id="charge-btn" class="btn btn-success btn-lg" disabled>
+        Charge $0.00
+      </button>
+      <button type="button" id="clear-btn" class="btn btn-outline btn-lg">
+        Clear Cart
+      </button>
+    </section>
+  </main>
+
+  <!-- Manual Entry Dialog -->
+  <dialog id="manual-dialog" aria-label="Add product manually">
+    <h2>Add Product</h2>
+    <div class="form-group">
+      <label for="manual-barcode">Barcode</label>
+      <input type="text" id="manual-barcode" readonly>
+    </div>
+    <div class="form-group">
+      <label for="manual-name">Product Name</label>
+      <input type="text" id="manual-name" required autocomplete="off" placeholder="Enter product name">
+    </div>
+    <div class="form-group">
+      <label for="manual-price">Price ($)</label>
+      <input type="number" id="manual-price" step="0.01" min="0.01" required placeholder="0.00">
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-outline" id="manual-cancel-btn">Cancel</button>
+      <button type="button" class="btn btn-accent" id="manual-save-btn">Add to Cart</button>
+    </div>
+  </dialog>
+
+  <!-- Camera Scanner Dialog -->
+  <dialog id="camera-dialog" aria-label="Camera scanner">
+    <div class="dialog-header">
+      <h2 id="camera-title">Scan Product</h2>
+      <button type="button" class="dialog-close" aria-label="Close scanner" id="camera-close-btn">&times;</button>
+    </div>
+    <div id="camera-viewfinder"></div>
+    <p class="camera-hint">Position barcode or QR code in front of camera</p>
+  </dialog>
+
+  <!-- Payment Dialog -->
+  <dialog id="payment-dialog" aria-label="Payment">
+    <h2>Payment</h2>
+    <div class="payment-total" id="payment-total">$0.00</div>
+    <div class="payment-options">
+      <div class="payment-option rfid-option" role="status" aria-label="Tap RFID card to pay">
+        <div class="option-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <div class="option-text">Tap RFID Card</div>
+        <div class="option-hint">Waiting for card...</div>
+      </div>
+      <div class="payment-divider">or</div>
+      <button type="button" class="payment-option qr-option" id="qr-pay-btn">
+        <div class="option-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><path d="M14 14h4v4h-4z"/><path d="M20 14h2v2h-2z"/><path d="M14 20h2v2h-2z"/><path d="M20 20h2v2h-2z"/></svg>
+        </div>
+        <div class="option-text">Scan QR Code</div>
+      </button>
+    </div>
+    <button type="button" class="btn btn-outline" id="payment-cancel-btn" style="width:100%">Cancel</button>
+  </dialog>
+
+  <!-- Admin Dialog -->
+  <dialog id="admin-dialog" aria-label="Admin panel">
+    <div class="dialog-header">
+      <h2>Admin Panel</h2>
+      <button type="button" class="dialog-close" aria-label="Close admin panel" id="admin-close-btn">&times;</button>
+    </div>
+    <button type="button" class="btn btn-accent" id="seed-btn" style="width:100%">Seed Test Data</button>
+    <h3>Gift Cards</h3>
+    <div id="admin-cards-list">
+      <p style="color:var(--text-secondary);font-size:14px">No gift cards found. Seed test data first.</p>
+    </div>
+  </dialog>
+
+  <!-- Result Dialog -->
+  <dialog id="result-dialog" aria-label="Transaction result">
+    <div id="result-icon" class="result-icon"></div>
+    <h2 id="result-title"></h2>
+    <p id="result-message"></p>
+    <button type="button" class="btn btn-accent" id="result-done-btn" style="width:100%">Done</button>
+  </dialog>
+
+  <!-- Screen reader announcements -->
+  <div id="announcer" aria-live="polite" class="sr-only"></div>
+
+  <script>
+    /* ============================================================
+       STATE
+       ============================================================ */
+    let cart = [];
+    let appState = 'idle'; // idle | payment_rfid | payment_qr | scanning_product
+    let html5QrCode = null;
+
+    /* ============================================================
+       DOM REFERENCES
+       ============================================================ */
+    const dom = {
+      cartBody:       document.getElementById('cart-body'),
+      itemCount:      document.getElementById('item-count'),
+      subtotal:       document.getElementById('subtotal'),
+      tax:            document.getElementById('tax'),
+      total:          document.getElementById('total'),
+      totalDisplay:   document.getElementById('total-display'),
+      chargeBtn:      document.getElementById('charge-btn'),
+      clearBtn:       document.getElementById('clear-btn'),
+      cameraBtn:      document.getElementById('camera-btn'),
+      adminBtn:       document.getElementById('admin-btn'),
+      manualDialog:   document.getElementById('manual-dialog'),
+      cameraDialog:   document.getElementById('camera-dialog'),
+      paymentDialog:  document.getElementById('payment-dialog'),
+      adminDialog:    document.getElementById('admin-dialog'),
+      resultDialog:   document.getElementById('result-dialog'),
+      cameraTitle:    document.getElementById('camera-title'),
+      paymentTotal:   document.getElementById('payment-total'),
+      announcer:      document.getElementById('announcer'),
+      resultIcon:     document.getElementById('result-icon'),
+      resultTitle:    document.getElementById('result-title'),
+      resultMessage:  document.getElementById('result-message'),
+      manualBarcode:  document.getElementById('manual-barcode'),
+      manualName:     document.getElementById('manual-name'),
+      manualPrice:    document.getElementById('manual-price'),
+      adminCardsList: document.getElementById('admin-cards-list'),
+    };
+
+    /* ============================================================
+       UTILITIES
+       ============================================================ */
+    function escapeHtml(str) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return String(str).replace(/[&<>"']/g, c => map[c]);
+    }
+
+    function announce(message) {
+      dom.announcer.textContent = '';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { dom.announcer.textContent = message; });
+      });
+    }
+
+    function fmt(n) {
+      return '$' + n.toFixed(2);
+    }
+
+    /* ============================================================
+       LOCALSTORAGE
+       ============================================================ */
+    function getInventory() {
+      try { return JSON.parse(localStorage.getItem('inventory')) || {}; }
+      catch { return {}; }
+    }
+
+    function saveInventory(inv) {
+      localStorage.setItem('inventory', JSON.stringify(inv));
+    }
+
+    function getGiftCards() {
+      try { return JSON.parse(localStorage.getItem('giftCards')) || {}; }
+      catch { return {}; }
+    }
+
+    function saveGiftCards(cards) {
+      localStorage.setItem('giftCards', JSON.stringify(cards));
+    }
+
+    /* ============================================================
+       SCANNER INTERCEPTOR
+       ============================================================ */
+    let scanBuffer = '';
+    let lastKeyTime = 0;
+    const SCAN_THRESHOLD_MS = 80;
+    const MIN_SCAN_LENGTH = 6;
+
+    document.addEventListener('keydown', function(e) {
+      const now = Date.now();
+      if (now - lastKeyTime > SCAN_THRESHOLD_MS) scanBuffer = '';
+      lastKeyTime = now;
+
+      if (e.key === 'Enter') {
+        if (scanBuffer.length >= MIN_SCAN_LENGTH) {
+          e.preventDefault();
+          e.stopPropagation();
+          const data = scanBuffer;
+          scanBuffer = '';
+          if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+            document.activeElement.value = document.activeElement.value.slice(0, -data.length);
+          }
+          handleScan(data);
+        }
+        scanBuffer = '';
+      } else if (e.key.length === 1) {
+        scanBuffer += e.key;
+      }
+    }, true);
+
+    /* ============================================================
+       SCAN ROUTING
+       ============================================================ */
+    function handleScan(data) {
+      data = data.trim();
+      if (!data) return;
+
+      if (dom.manualDialog.open || dom.adminDialog.open) return;
+
+      if (appState === 'payment_rfid' || appState === 'payment_qr') {
+        processCardPayment(data);
+      } else {
+        handleBarcodeScan(data);
+      }
+    }
+
+    /* ============================================================
+       PRODUCT LOOKUP
+       ============================================================ */
+    async function handleBarcodeScan(barcode) {
+      const inventory = getInventory();
+      if (inventory[barcode]) {
+        addToCart(inventory[barcode]);
+        return;
+      }
+
+      announce('Looking up product\u2026');
+
+      try {
+        const product = await fetchFromAPIs(barcode);
+        const name = product.product_name || product.brands || 'Unknown Product';
+        const categories = product.categories_tags || [];
+        const brand = product.brands || '';
+        const price = calculatePrice(barcode, categories, brand);
+        const item = { barcode, name, price };
+
+        inventory[barcode] = item;
+        saveInventory(inventory);
+        addToCart(item);
+      } catch {
+        openManualEntry(barcode);
+      }
+    }
+
+    async function fetchFromAPIs(barcode) {
+      const urls = [
+        'https://world.openfoodfacts.org/api/v0/product/' + barcode + '.json',
+        'https://world.openbeautyfacts.org/api/v0/product/' + barcode + '.json',
+        'https://world.openproductsfacts.org/api/v0/product/' + barcode + '.json',
+      ];
+
+      return Promise.any(
+        urls.map(url =>
+          fetch(url, { signal: AbortSignal.timeout(6000) })
+            .then(r => r.json())
+            .then(data => {
+              if (data.status !== 1 || !data.product) throw new Error('Not found');
+              return data.product;
+            })
+        )
+      );
+    }
+
+    /* ============================================================
+       DETERMINISTIC PRICING
+       ============================================================ */
+    const CATEGORY_PRICES = {
+      'snacks':         [2, 6],
+      'chips':          [2, 6],
+      'candy':          [1, 4],
+      'chocolate':      [2, 6],
+      'beverages':      [1, 5],
+      'sodas':          [1, 4],
+      'water':          [1, 3],
+      'juice':          [2, 6],
+      'coffee':         [3, 10],
+      'tea':            [2, 7],
+      'dairy':          [3, 8],
+      'milk':           [3, 6],
+      'cheese':         [3, 9],
+      'yogurt':         [2, 6],
+      'bakery':         [2, 7],
+      'bread':          [2, 6],
+      'frozen':         [3, 10],
+      'ice-cream':      [3, 8],
+      'canned':         [1, 4],
+      'soup':           [2, 5],
+      'condiments':     [2, 6],
+      'sauce':          [2, 6],
+      'cereals':        [3, 7],
+      'pasta':          [1, 4],
+      'rice':           [2, 5],
+      'meat':           [5, 15],
+      'poultry':        [4, 12],
+      'seafood':        [6, 18],
+      'produce':        [1, 5],
+      'fruit':          [1, 5],
+      'vegetable':      [1, 5],
+      'organic':        [3, 10],
+      'baby':           [5, 15],
+      'pet':            [3, 12],
+      'cleaning':       [3, 8],
+      'personal-care':  [2, 10],
+      'health':         [4, 15],
+      'beauty':         [5, 20],
+      'cosmetics':      [4, 18],
+      'household':      [3, 10],
+      'electronics':    [10, 50],
+    };
+
+    const PREMIUM_BRANDS = [
+      'organic valley', 'whole foods', 'starbucks', 'kind', 'rxbar', 'clif',
+      'blue diamond', 'smartwater', 'fiji', 'voss', 'perrier', "newman's own",
+      'annie', 'amy', 'burt', 'method', 'seventh generation',
+    ];
+
+    const BUDGET_BRANDS = [
+      'great value', 'kirkland', 'store brand', 'generic', '365',
+      'market pantry', 'up & up', 'equate', 'essential everyday',
+    ];
+
+    function calculatePrice(barcode, categories, brand) {
+      let range = null;
+
+      if (categories && categories.length > 0) {
+        for (const cat of categories) {
+          const cl = cat.toLowerCase().replace(/^en:/, '');
+          for (const [key, prices] of Object.entries(CATEGORY_PRICES)) {
+            if (cl.includes(key)) { range = prices; break; }
+          }
+          if (range) break;
+        }
+      }
+
+      if (!range) range = [2, 8];
+
+      const [min, max] = range;
+      const seed = parseInt(barcode.slice(-4), 10) / 9999;
+      let price = min + (isNaN(seed) ? 0.5 : seed) * (max - min);
+
+      const bl = (brand || '').toLowerCase();
+      if (PREMIUM_BRANDS.some(b => bl.includes(b))) {
+        price *= 1.20;
+      } else if (BUDGET_BRANDS.some(b => bl.includes(b))) {
+        price *= 0.85;
+      }
+
+      return Math.floor(price) + 0.99;
+    }
+
+    /* ============================================================
+       CART MANAGEMENT
+       ============================================================ */
+    function addToCart(item) {
+      const existing = cart.find(i => i.barcode === item.barcode);
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({ barcode: item.barcode, name: item.name, price: item.price, qty: 1 });
+      }
+      renderCart();
+      announce('Added ' + item.name + ', ' + fmt(item.price));
+    }
+
+    function removeFromCart(index) {
+      const item = cart[index];
+      if (!item) return;
+      const name = item.name;
+      cart.splice(index, 1);
+      renderCart();
+      announce('Removed ' + name);
+    }
+
+    function clearCart() {
+      if (cart.length === 0) return;
+      cart = [];
+      renderCart();
+      announce('Cart cleared');
+    }
+
+    function getSubtotal() {
+      return cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+    }
+
+    function getTax() {
+      return Math.round(getSubtotal() * 8) / 100;
+    }
+
+    function getTotal() {
+      return getSubtotal() + getTax();
+    }
+
+    function renderCart() {
+      const totalItems = cart.reduce((s, i) => s + i.qty, 0);
+      dom.itemCount.textContent = totalItems + ' item' + (totalItems !== 1 ? 's' : '');
+
+      if (cart.length === 0) {
+        dom.cartBody.innerHTML = '<tr><td colspan="5" class="empty-cart">Scan an item to begin</td></tr>';
+      } else {
+        dom.cartBody.innerHTML = cart.map((item, i) =>
+          '<tr>' +
+            '<td>' + escapeHtml(item.name) + '</td>' +
+            '<td>' + fmt(item.price) + '</td>' +
+            '<td>' + item.qty + '</td>' +
+            '<td>' + fmt(item.price * item.qty) + '</td>' +
+            '<td><button class="delete-btn" aria-label="Remove ' + escapeHtml(item.name) +
+              '" data-index="' + i + '">' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+              'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+              '<polyline points="3 6 5 6 21 6"/>' +
+              '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
+              '</svg></button></td>' +
+          '</tr>'
+        ).join('');
+      }
+
+      const sub = getSubtotal();
+      const tax = getTax();
+      const total = getTotal();
+      dom.subtotal.textContent = fmt(sub);
+      dom.tax.textContent = fmt(tax);
+      dom.total.textContent = fmt(total);
+      dom.totalDisplay.textContent = fmt(total);
+      dom.chargeBtn.textContent = 'Charge ' + fmt(total);
+      dom.chargeBtn.disabled = cart.length === 0;
+    }
+
+    dom.cartBody.addEventListener('click', function(e) {
+      const btn = e.target.closest('.delete-btn');
+      if (btn) removeFromCart(parseInt(btn.dataset.index, 10));
+    });
+
+    /* ============================================================
+       MANUAL ENTRY
+       ============================================================ */
+    function openManualEntry(barcode) {
+      dom.manualBarcode.value = barcode;
+      dom.manualName.value = '';
+      dom.manualPrice.value = '';
+      dom.manualDialog.showModal();
+      dom.manualName.focus();
+      announce('Product not found. Enter name and price manually.');
+    }
+
+    document.getElementById('manual-save-btn').addEventListener('click', function() {
+      const barcode = dom.manualBarcode.value.trim();
+      const name = dom.manualName.value.trim();
+      const price = parseFloat(dom.manualPrice.value);
+
+      if (!name) { dom.manualName.focus(); return; }
+      if (isNaN(price) || price <= 0) { dom.manualPrice.focus(); return; }
+
+      const item = { barcode, name, price: Math.round(price * 100) / 100 };
+      const inv = getInventory();
+      inv[barcode] = item;
+      saveInventory(inv);
+
+      dom.manualDialog.close();
+      addToCart(item);
+    });
+
+    document.getElementById('manual-cancel-btn').addEventListener('click', function() {
+      dom.manualDialog.close();
+    });
+
+    dom.manualDialog.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('manual-save-btn').click();
+      }
+    });
+
+    /* ============================================================
+       PAYMENT FLOW
+       ============================================================ */
+    function startPayment() {
+      if (cart.length === 0) return;
+      const total = getTotal();
+      dom.paymentTotal.textContent = fmt(total);
+      appState = 'payment_rfid';
+      dom.paymentDialog.showModal();
+      announce('Ready to accept payment of ' + fmt(total) + '. Tap RFID card or scan QR code.');
+    }
+
+    function processCardPayment(cardId) {
+      cardId = cardId.trim();
+      const cards = getGiftCards();
+      const total = getTotal();
+
+      closeAllDialogs();
+      appState = 'idle';
+
+      if (!cards[cardId]) {
+        showResult('error', 'Card Not Recognized',
+          'This card is not registered in the system.\nCard ID: ' + cardId);
+        return;
+      }
+
+      if (cards[cardId].balance < total) {
+        showResult('error', 'Insufficient Funds',
+          'Card balance: ' + fmt(cards[cardId].balance) +
+          '\nAmount due: ' + fmt(total));
+        return;
+      }
+
+      cards[cardId].balance = Math.round((cards[cardId].balance - total) * 100) / 100;
+      saveGiftCards(cards);
+
+      const remaining = cards[cardId].balance;
+      cart = [];
+      renderCart();
+
+      showResult('success', 'Payment Successful',
+        'Charged: ' + fmt(total) + '\nRemaining balance: ' + fmt(remaining));
+    }
+
+    dom.chargeBtn.addEventListener('click', startPayment);
+
+    document.getElementById('payment-cancel-btn').addEventListener('click', function() {
+      dom.paymentDialog.close();
+    });
+
+    dom.paymentDialog.addEventListener('close', function() {
+      if (appState === 'payment_rfid') appState = 'idle';
+    });
+
+    /* ============================================================
+       CAMERA SCANNER
+       ============================================================ */
+    function openCameraScanner(context) {
+      if (typeof Html5Qrcode === 'undefined') {
+        announce('Camera scanner library not loaded. Check your internet connection.');
+        return;
+      }
+
+      appState = context;
+      dom.cameraTitle.textContent = context === 'payment_qr' ? 'Scan Payment QR' : 'Scan Product';
+      dom.cameraDialog.showModal();
+
+      setTimeout(function() {
+        document.getElementById('camera-viewfinder').innerHTML = '';
+        html5QrCode = new Html5Qrcode('camera-viewfinder');
+        html5QrCode.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+          function(decodedText) {
+            stopCameraScanner();
+            dom.cameraDialog.close();
+            handleScan(decodedText);
+          },
+          function() {}
+        ).catch(function() {
+          announce('Camera access denied or unavailable.');
+          dom.cameraDialog.close();
+          appState = 'idle';
+        });
+      }, 350);
+    }
+
+    function stopCameraScanner() {
+      if (html5QrCode) {
+        try { html5QrCode.stop().catch(function() {}); } catch {}
+        html5QrCode = null;
+      }
+    }
+
+    dom.cameraBtn.addEventListener('click', function() {
+      openCameraScanner('scanning_product');
+    });
+
+    document.getElementById('qr-pay-btn').addEventListener('click', function() {
+      appState = 'payment_qr';
+      dom.paymentDialog.close();
+      openCameraScanner('payment_qr');
+    });
+
+    document.getElementById('camera-close-btn').addEventListener('click', function() {
+      dom.cameraDialog.close();
+    });
+
+    dom.cameraDialog.addEventListener('close', function() {
+      stopCameraScanner();
+      if (appState === 'scanning_product' || appState === 'payment_qr') {
+        appState = 'idle';
+      }
+    });
+
+    /* ============================================================
+       RESULT DIALOG
+       ============================================================ */
+    function showResult(type, title, message) {
+      dom.resultDialog.className = type;
+      dom.resultIcon.textContent = type === 'success' ? '\u2713' : '\u2717';
+      dom.resultTitle.textContent = title;
+      dom.resultMessage.textContent = message;
+      dom.resultDialog.showModal();
+      announce(title + '. ' + message);
+    }
+
+    document.getElementById('result-done-btn').addEventListener('click', function() {
+      dom.resultDialog.close();
+    });
+
+    function closeAllDialogs() {
+      [dom.cameraDialog, dom.paymentDialog, dom.resultDialog].forEach(function(d) {
+        if (d.open) d.close();
+      });
+      stopCameraScanner();
+    }
+
+    /* ============================================================
+       QR CODE GENERATOR
+       ============================================================ */
+    function generateQR(cardId) {
+      if (typeof QRCode === 'undefined') {
+        announce('QR code library not loaded. Check your internet connection.');
+        return;
+      }
+
+      var container = document.getElementById('qr-' + cardId);
+      if (!container) return;
+
+      container.innerHTML = '';
+      new QRCode(container, {
+        text: cardId,
+        width: 128,
+        height: 128,
+        colorDark: '#1a1a1a',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H,
+      });
+
+      var btn = container.previousElementSibling;
+      if (btn) { btn.textContent = 'QR Generated'; btn.disabled = true; }
+      announce('QR code generated for card ' + cardId);
+    }
+
+    /* ============================================================
+       ADMIN PANEL
+       ============================================================ */
+    function seedTestData() {
+      var existingCards = getGiftCards();
+      var cards = Object.assign({}, existingCards, {
+        'A1B2C3D4': { balance: 50.00 },
+        'E5F6G7H8': { balance: 50.00 },
+        'I9J0K1L2': { balance: 50.00 },
+      });
+      saveGiftCards(cards);
+
+      var inv = getInventory();
+      inv['0012345678905'] = { barcode: '0012345678905', name: 'Cola Classic 12oz', price: 1.99 };
+      inv['0012345678912'] = { barcode: '0012345678912', name: 'Kettle Chips Sea Salt', price: 3.99 };
+      inv['0012345678929'] = { barcode: '0012345678929', name: 'Whole Wheat Bread', price: 4.99 };
+      saveInventory(inv);
+
+      renderAdminCards();
+      announce('Test data loaded. 3 gift cards with $50 each and 3 sample products added.');
+    }
+
+    function renderAdminCards() {
+      var cards = getGiftCards();
+      var keys = Object.keys(cards);
+
+      if (keys.length === 0) {
+        dom.adminCardsList.innerHTML =
+          '<p style="color:var(--text-secondary);font-size:14px">No gift cards found. Seed test data first.</p>';
+        return;
+      }
+
+      dom.adminCardsList.innerHTML = keys.map(function(id) {
+        var card = cards[id];
+        return '<div class="admin-card-row">' +
+          '<div class="card-info">' +
+            '<span class="card-id">' + escapeHtml(id) + '</span>' +
+            '<span class="card-balance">' + fmt(card.balance) + '</span>' +
+          '</div>' +
+          '<div class="card-actions">' +
+            '<button type="button" class="btn btn-sm btn-outline" onclick="generateQR(\'' +
+              escapeHtml(id) + '\')">Generate QR</button>' +
+            '<div class="qr-container" id="qr-' + escapeHtml(id) + '"></div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    dom.adminBtn.addEventListener('click', function() {
+      renderAdminCards();
+      dom.adminDialog.showModal();
+    });
+
+    document.getElementById('admin-close-btn').addEventListener('click', function() {
+      dom.adminDialog.close();
+    });
+
+    document.getElementById('seed-btn').addEventListener('click', seedTestData);
+
+    /* ============================================================
+       CLEAR CART
+       ============================================================ */
+    dom.clearBtn.addEventListener('click', clearCart);
+
+    /* ============================================================
+       INIT
+       ============================================================ */
+    renderCart();
+  </script>
+</body>
+</html>
