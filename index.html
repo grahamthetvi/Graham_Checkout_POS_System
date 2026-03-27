@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Graham Checkout</title>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -33,7 +33,6 @@
       font-family: var(--font);
       background: var(--bg);
       color: var(--text);
-      -webkit-text-size-adjust: 100%;
       overflow: hidden;
     }
 
@@ -55,7 +54,13 @@
       letter-spacing: -0.3px;
     }
 
-    #admin-btn {
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-actions .header-btn {
       font-size: 12px;
       color: var(--text-secondary);
       background: none;
@@ -66,7 +71,41 @@
       font-family: var(--font);
     }
 
-    #admin-btn:active { background: var(--bg); }
+    .header-actions .header-btn:active { background: var(--bg); }
+
+    #info-dialog {
+      max-width: 520px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .info-dialog-body {
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--text);
+    }
+
+    .info-dialog-body p { margin-bottom: 12px; }
+
+    .info-dialog-body ul {
+      margin: 0 0 12px 1.25em;
+      padding: 0;
+    }
+
+    .info-dialog-body li { margin: 0.35em 0; }
+
+    .help-contact {
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 16px 0 0;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .help-contact a {
+      color: var(--accent);
+      word-break: break-all;
+    }
 
     main {
       display: grid;
@@ -106,7 +145,6 @@
     .cart-items {
       flex: 1;
       overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
     }
 
     .cart-items table {
@@ -540,6 +578,13 @@
     .qr-container img { display: block; }
     .qr-container canvas { display: block; }
 
+    .full-width-btn { width: 100%; }
+
+    .admin-empty-text {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
     /* ===== Responsive ===== */
 
     @media (max-width: 768px) {
@@ -577,7 +622,10 @@
 
   <header role="banner">
     <h1>Graham Checkout</h1>
-    <button type="button" id="admin-btn" aria-label="Admin: manage test data and gift cards">Admin</button>
+    <div class="header-actions">
+      <button type="button" id="help-btn" class="header-btn" aria-label="Help and contact">Help</button>
+      <button type="button" id="admin-btn" class="header-btn" aria-label="Admin: manage test data and gift cards">Admin</button>
+    </div>
   </header>
 
   <main>
@@ -627,6 +675,26 @@
       </button>
     </section>
   </main>
+
+  <!-- Welcome / Help -->
+  <dialog id="info-dialog" aria-labelledby="info-dialog-title">
+    <h2 id="info-dialog-title">Welcome to Graham Checkout</h2>
+    <div class="info-dialog-body">
+      <p>Graham Checkout is a browser-based point-of-sale for classroom practice. Scan barcodes with a USB scanner or your device camera, build a cart, and pay with a test gift card.</p>
+      <p><strong>How lookup works</strong></p>
+      <ul>
+        <li>Barcodes on the classroom inventory list are matched first—fast and works offline once the list has loaded.</li>
+        <li>Items you have scanned before are remembered on this device.</li>
+        <li>Otherwise the app looks up products online (Open Food, Beauty, and Products Facts, or Open Library for book ISBNs). Prices are generated for practice, not real retail prices.</li>
+        <li>If nothing matches, you can enter the product name and price manually.</li>
+        <li>Open <strong>Admin</strong> to seed sample gift cards and demo products.</li>
+      </ul>
+    </div>
+    <p class="help-contact">Need help? Email <a href="mailto:grahamthetvi@icloud.com">grahamthetvi@icloud.com</a></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-accent" id="info-dialog-close-btn">Got it</button>
+    </div>
+  </dialog>
 
   <!-- Manual Entry Dialog -->
   <dialog id="manual-dialog" aria-label="Add product manually">
@@ -679,7 +747,7 @@
         <div class="option-text">Scan QR Code</div>
       </button>
     </div>
-    <button type="button" class="btn btn-outline" id="payment-cancel-btn" style="width:100%">Cancel</button>
+    <button type="button" class="btn btn-outline full-width-btn" id="payment-cancel-btn">Cancel</button>
   </dialog>
 
   <!-- Admin Dialog -->
@@ -688,10 +756,10 @@
       <h2>Admin Panel</h2>
       <button type="button" class="dialog-close" aria-label="Close admin panel" id="admin-close-btn">&times;</button>
     </div>
-    <button type="button" class="btn btn-accent" id="seed-btn" style="width:100%">Seed Test Data</button>
+    <button type="button" class="btn btn-accent full-width-btn" id="seed-btn">Seed Test Data</button>
     <h3>Gift Cards</h3>
     <div id="admin-cards-list">
-      <p style="color:var(--text-secondary);font-size:14px">No gift cards found. Seed test data first.</p>
+      <p class="admin-empty-text">No gift cards found. Seed test data first.</p>
     </div>
   </dialog>
 
@@ -700,7 +768,7 @@
     <div id="result-icon" class="result-icon"></div>
     <h2 id="result-title"></h2>
     <p id="result-message"></p>
-    <button type="button" class="btn btn-accent" id="result-done-btn" style="width:100%">Done</button>
+    <button type="button" class="btn btn-accent full-width-btn" id="result-done-btn">Done</button>
   </dialog>
 
   <!-- Screen reader announcements -->
@@ -713,6 +781,8 @@
     let cart = [];
     let appState = 'idle'; // idle | payment_rfid | payment_qr | scanning_product
     let html5QrCode = null;
+    let classroomLookup = null;
+    let classroomLoadPromise = null;
 
     /* ============================================================
        DOM REFERENCES
@@ -728,6 +798,9 @@
       clearBtn:       document.getElementById('clear-btn'),
       cameraBtn:      document.getElementById('camera-btn'),
       adminBtn:       document.getElementById('admin-btn'),
+      helpBtn:        document.getElementById('help-btn'),
+      infoDialog:     document.getElementById('info-dialog'),
+      infoDialogTitle: document.getElementById('info-dialog-title'),
       manualDialog:   document.getElementById('manual-dialog'),
       cameraDialog:   document.getElementById('camera-dialog'),
       paymentDialog:  document.getElementById('payment-dialog'),
@@ -822,7 +895,7 @@
       data = data.trim();
       if (!data) return;
 
-      if (dom.manualDialog.open || dom.adminDialog.open) return;
+      if (dom.manualDialog.open || dom.adminDialog.open || dom.infoDialog.open) return;
 
       if (appState === 'payment_rfid' || appState === 'payment_qr') {
         processCardPayment(data);
@@ -834,6 +907,59 @@
     /* ============================================================
        PRODUCT LOOKUP
        ============================================================ */
+    function getBarcodeVariants(barcode) {
+      const clean = String(barcode || '').trim().replace(/\D/g, '');
+      const set = new Set();
+      if (clean) set.add(clean);
+      if (/^\d{12}$/.test(clean)) set.add('0' + clean);
+      if (/^0\d{12}$/.test(clean)) set.add(clean.slice(1));
+      return Array.from(set);
+    }
+
+    function isbnFromBarcode(barcode) {
+      if (/^\d{13}$/.test(barcode) && (barcode.startsWith('978') || barcode.startsWith('979'))) {
+        return barcode;
+      }
+      if (/^\d{10}$/.test(barcode)) return barcode;
+      return null;
+    }
+
+    function buildClassroomLookup(rows) {
+      const map = Object.create(null);
+      if (!Array.isArray(rows)) return map;
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const clean = String(row.barcode || '').trim().replace(/\D/g, '');
+        if (!clean) continue;
+        const name = (row.name && String(row.name).trim()) || 'Unknown Product';
+        const variants = getBarcodeVariants(clean);
+        for (let j = 0; j < variants.length; j++) {
+          const v = variants[j];
+          if (!map[v]) map[v] = name;
+        }
+      }
+      return map;
+    }
+
+    function ensureClassroomLoaded() {
+      if (classroomLookup) return Promise.resolve(classroomLookup);
+      if (classroomLoadPromise) return classroomLoadPromise;
+      classroomLoadPromise = fetch('classroom-comprehensive-inventory.json')
+        .then(function(r) {
+          if (!r.ok) throw new Error('Classroom list unavailable');
+          return r.json();
+        })
+        .then(function(rows) {
+          classroomLookup = buildClassroomLookup(rows);
+          return classroomLookup;
+        })
+        .catch(function() {
+          classroomLookup = Object.create(null);
+          return classroomLookup;
+        });
+      return classroomLoadPromise;
+    }
+
     async function handleBarcodeScan(barcode) {
       const scanned = barcode;
       const inventory = getInventory();
@@ -841,6 +967,22 @@
       for (const code of variants) {
         if (inventory[code]) {
           addToCart(inventory[code]);
+          return;
+        }
+      }
+
+      await ensureClassroomLoaded();
+      for (const code of variants) {
+        const classroomName = classroomLookup[code];
+        if (classroomName) {
+          const price = calculatePrice(code, [], '');
+          const item = { barcode: code, name: classroomName, price: price };
+          getBarcodeVariants(scanned).forEach(function(k) {
+            inventory[k] = item;
+          });
+          inventory[code] = item;
+          saveInventory(inventory);
+          addToCart(item);
           return;
         }
       }
@@ -873,23 +1015,6 @@
         return fetchOpenLibraryProduct(barcode);
       }
       return fetchOpenFactsProduct(barcode);
-    }
-
-    function getBarcodeVariants(barcode) {
-      const clean = String(barcode || '').trim().replace(/\D/g, '');
-      const set = new Set();
-      if (clean) set.add(clean);
-      if (/^\d{12}$/.test(clean)) set.add('0' + clean);
-      if (/^0\d{12}$/.test(clean)) set.add(clean.slice(1));
-      return Array.from(set);
-    }
-
-    function isbnFromBarcode(barcode) {
-      if (/^\d{13}$/.test(barcode) && (barcode.startsWith('978') || barcode.startsWith('979'))) {
-        return barcode;
-      }
-      if (/^\d{10}$/.test(barcode)) return barcode;
-      return null;
     }
 
     async function fetchOpenFactsProduct(barcode) {
@@ -1285,7 +1410,7 @@
     });
 
     function closeAllDialogs() {
-      [dom.cameraDialog, dom.paymentDialog, dom.resultDialog].forEach(function(d) {
+      [dom.cameraDialog, dom.paymentDialog, dom.resultDialog, dom.infoDialog].forEach(function(d) {
         if (d.open) d.close();
       });
       stopCameraScanner();
@@ -1346,7 +1471,7 @@
 
       if (keys.length === 0) {
         dom.adminCardsList.innerHTML =
-          '<p style="color:var(--text-secondary);font-size:14px">No gift cards found. Seed test data first.</p>';
+          '<p class="admin-empty-text">No gift cards found. Seed test data first.</p>';
         return;
       }
 
@@ -1383,9 +1508,41 @@
     dom.clearBtn.addEventListener('click', clearCart);
 
     /* ============================================================
+       WELCOME / HELP
+       ============================================================ */
+    const WELCOME_SEEN_KEY = 'grahamCheckoutWelcomeSeen';
+
+    function openInfoDialog(mode) {
+      dom.infoDialogTitle.textContent = mode === 'welcome'
+        ? 'Welcome to Graham Checkout'
+        : 'Help';
+      dom.infoDialog.showModal();
+    }
+
+    dom.helpBtn.addEventListener('click', function() {
+      openInfoDialog('help');
+    });
+
+    document.getElementById('info-dialog-close-btn').addEventListener('click', function() {
+      dom.infoDialog.close();
+    });
+
+    dom.infoDialog.addEventListener('close', function() {
+      localStorage.setItem(WELCOME_SEEN_KEY, '1');
+    });
+
+    /* ============================================================
        INIT
        ============================================================ */
-    renderCart();
+    function initApp() {
+      renderCart();
+      ensureClassroomLoaded();
+      if (!localStorage.getItem(WELCOME_SEEN_KEY)) {
+        openInfoDialog('welcome');
+      }
+    }
+
+    initApp();
   </script>
 </body>
 </html>
