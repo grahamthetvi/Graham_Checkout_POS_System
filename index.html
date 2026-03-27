@@ -835,27 +835,35 @@
        PRODUCT LOOKUP
        ============================================================ */
     async function handleBarcodeScan(barcode) {
+      const scanned = barcode;
       const inventory = getInventory();
-      if (inventory[barcode]) {
-        addToCart(inventory[barcode]);
-        return;
+      const variants = getBarcodeVariants(scanned);
+      for (const code of variants) {
+        if (inventory[code]) {
+          addToCart(inventory[code]);
+          return;
+        }
       }
 
       announce('Looking up product\u2026');
 
       try {
-        const product = await fetchFromAPIs(barcode);
+        const product = await fetchFromAPIs(scanned);
         const name = product.name || 'Unknown Product';
         const categories = product.categories || [];
         const brand = product.brand || '';
-        const price = calculatePrice(barcode, categories, brand);
-        const item = { barcode, name, price };
+        const resolvedBarcode = product.barcode || scanned;
+        const price = calculatePrice(resolvedBarcode, categories, brand);
+        const item = { barcode: resolvedBarcode, name, price };
 
-        inventory[barcode] = item;
+        getBarcodeVariants(scanned).forEach(function(code) {
+          inventory[code] = item;
+        });
+        inventory[resolvedBarcode] = item;
         saveInventory(inventory);
         addToCart(item);
       } catch {
-        openManualEntry(barcode);
+        openManualEntry(scanned);
       }
     }
 
@@ -867,6 +875,15 @@
       return fetchOpenFactsProduct(barcode);
     }
 
+    function getBarcodeVariants(barcode) {
+      const clean = String(barcode || '').trim().replace(/\D/g, '');
+      const set = new Set();
+      if (clean) set.add(clean);
+      if (/^\d{12}$/.test(clean)) set.add('0' + clean);
+      if (/^0\d{12}$/.test(clean)) set.add(clean.slice(1));
+      return Array.from(set);
+    }
+
     function isbnFromBarcode(barcode) {
       if (/^\d{13}$/.test(barcode) && (barcode.startsWith('978') || barcode.startsWith('979'))) {
         return barcode;
@@ -876,20 +893,28 @@
     }
 
     async function fetchOpenFactsProduct(barcode) {
-      const urls = [
-        'https://world.openfoodfacts.org/api/v0/product/' + barcode + '.json',
-        'https://world.openbeautyfacts.org/api/v0/product/' + barcode + '.json',
-        'https://world.openproductsfacts.org/api/v0/product/' + barcode + '.json',
-      ];
+      const variants = getBarcodeVariants(barcode);
+      const codesToTry = variants.length ? variants : [barcode];
+      const domains = ['openfoodfacts', 'openbeautyfacts', 'openproductsfacts'];
+      const urls = [];
+      codesToTry.forEach(function(code) {
+        domains.forEach(function(domain) {
+          urls.push({
+            code,
+            url: 'https://world.' + domain + '.org/api/v0/product/' + code + '.json',
+          });
+        });
+      });
 
       return Promise.any(
-        urls.map(url =>
+        urls.map(({ code, url }) =>
           fetch(url, { signal: AbortSignal.timeout(6000) })
             .then(r => r.json())
             .then(data => {
               if (data.status !== 1 || !data.product) throw new Error('Not found');
               const product = data.product;
               return {
+                barcode: code,
                 name: product.product_name || product.generic_name || product.brands || null,
                 categories: product.categories_tags || [],
                 brand: product.brands || '',
