@@ -845,9 +845,9 @@
 
       try {
         const product = await fetchFromAPIs(barcode);
-        const name = product.product_name || product.brands || 'Unknown Product';
-        const categories = product.categories_tags || [];
-        const brand = product.brands || '';
+        const name = product.name || 'Unknown Product';
+        const categories = product.categories || [];
+        const brand = product.brand || '';
         const price = calculatePrice(barcode, categories, brand);
         const item = { barcode, name, price };
 
@@ -860,6 +860,23 @@
     }
 
     async function fetchFromAPIs(barcode) {
+      const lookups = [
+        fetchOpenFactsProduct(barcode),
+        fetchGoogleBooksProduct(barcode),
+        fetchOpenLibraryProduct(barcode),
+      ];
+      return Promise.any(lookups);
+    }
+
+    function isbnFromBarcode(barcode) {
+      if (/^\d{13}$/.test(barcode) && (barcode.startsWith('978') || barcode.startsWith('979'))) {
+        return barcode;
+      }
+      if (/^\d{10}$/.test(barcode)) return barcode;
+      return null;
+    }
+
+    async function fetchOpenFactsProduct(barcode) {
       const urls = [
         'https://world.openfoodfacts.org/api/v0/product/' + barcode + '.json',
         'https://world.openbeautyfacts.org/api/v0/product/' + barcode + '.json',
@@ -872,10 +889,47 @@
             .then(r => r.json())
             .then(data => {
               if (data.status !== 1 || !data.product) throw new Error('Not found');
-              return data.product;
+              const product = data.product;
+              return {
+                name: product.product_name || product.generic_name || product.brands || null,
+                categories: product.categories_tags || [],
+                brand: product.brands || '',
+              };
             })
         )
       );
+    }
+
+    async function fetchGoogleBooksProduct(barcode) {
+      const isbn = isbnFromBarcode(barcode);
+      if (!isbn) throw new Error('Not an ISBN barcode');
+
+      const url = 'https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn;
+      const data = await fetch(url, { signal: AbortSignal.timeout(6000) }).then(r => r.json());
+      if (!data.items || data.items.length === 0) throw new Error('Book not found');
+
+      const info = data.items[0].volumeInfo || {};
+      return {
+        name: info.title || 'Unknown Book',
+        categories: (info.categories || []).map(c => String(c).toLowerCase()),
+        brand: (info.authors || []).join(', '),
+      };
+    }
+
+    async function fetchOpenLibraryProduct(barcode) {
+      const isbn = isbnFromBarcode(barcode);
+      if (!isbn) throw new Error('Not an ISBN barcode');
+
+      const url = 'https://openlibrary.org/api/books?bibkeys=ISBN:' + isbn + '&format=json&jscmd=data';
+      const data = await fetch(url, { signal: AbortSignal.timeout(6000) }).then(r => r.json());
+      const entry = data['ISBN:' + isbn];
+      if (!entry) throw new Error('Book not found');
+
+      return {
+        name: entry.title || 'Unknown Book',
+        categories: ['books'],
+        brand: (entry.authors || []).map(a => a.name).join(', '),
+      };
     }
 
     /* ============================================================
@@ -923,6 +977,10 @@
       'cosmetics':      [4, 18],
       'household':      [3, 10],
       'electronics':    [10, 50],
+      'book':           [6, 30],
+      'books':          [6, 30],
+      'novel':          [8, 25],
+      'textbook':       [20, 120],
     };
 
     const PREMIUM_BRANDS = [
