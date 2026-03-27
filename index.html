@@ -860,12 +860,11 @@
     }
 
     async function fetchFromAPIs(barcode) {
-      const lookups = [
-        fetchOpenFactsProduct(barcode),
-        fetchGoogleBooksProduct(barcode),
-        fetchOpenLibraryProduct(barcode),
-      ];
-      return Promise.any(lookups);
+      const isbn = isbnFromBarcode(barcode);
+      if (isbn) {
+        return fetchOpenLibraryProduct(barcode);
+      }
+      return fetchOpenFactsProduct(barcode);
     }
 
     function isbnFromBarcode(barcode) {
@@ -898,22 +897,6 @@
             })
         )
       );
-    }
-
-    async function fetchGoogleBooksProduct(barcode) {
-      const isbn = isbnFromBarcode(barcode);
-      if (!isbn) throw new Error('Not an ISBN barcode');
-
-      const url = 'https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn;
-      const data = await fetch(url, { signal: AbortSignal.timeout(6000) }).then(r => r.json());
-      if (!data.items || data.items.length === 0) throw new Error('Book not found');
-
-      const info = data.items[0].volumeInfo || {};
-      return {
-        name: info.title || 'Unknown Book',
-        categories: (info.categories || []).map(c => String(c).toLowerCase()),
-        brand: (info.authors || []).join(', '),
-      };
     }
 
     async function fetchOpenLibraryProduct(barcode) {
