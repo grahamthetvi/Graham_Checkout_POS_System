@@ -15,6 +15,8 @@
       --text: #1a1a1a;
       --text-secondary: #6b7280;
       --border: #e5e7eb;
+      --row-border: #f0f0f0;
+      --row-hover: #fafafa;
       --accent: #006aff;
       --accent-hover: #0052cc;
       --success: #24b47e;
@@ -26,6 +28,24 @@
       --shadow: 0 1px 3px rgba(0,0,0,0.08);
       --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
       --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    }
+
+    :root[data-theme='dark'] {
+      --bg: #111827;
+      --surface: #1f2937;
+      --text: #f9fafb;
+      --text-secondary: #9ca3af;
+      --border: #374151;
+      --row-border: #2d3748;
+      --row-hover: #273245;
+      --accent: #4c8dff;
+      --accent-hover: #3778f0;
+      --success: #22c55e;
+      --success-hover: #16a34a;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.55);
     }
 
     html, body {
@@ -72,11 +92,31 @@
     }
 
     .header-actions .header-btn:active { background: var(--bg); }
+    .header-actions .header-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+    }
+    .header-actions .header-icon-btn svg {
+      width: 18px;
+      height: 18px;
+    }
 
     #info-dialog {
       max-width: 520px;
       max-height: 85vh;
       overflow-y: auto;
+    }
+
+    #info-dialog[open] {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
     }
 
     .info-dialog-body {
@@ -175,7 +215,7 @@
     .cart-items tbody td {
       padding: 12px;
       font-size: 14px;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--row-border);
       vertical-align: middle;
     }
 
@@ -185,7 +225,7 @@
 
     .cart-items tbody td:last-child { text-align: center; }
 
-    .cart-items tbody tr:hover { background: #fafafa; }
+    .cart-items tbody tr:hover { background: var(--row-hover); }
 
     .empty-cart {
       text-align: center !important;
@@ -545,7 +585,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 12px 0;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--row-border);
       flex-wrap: wrap;
       gap: 8px;
     }
@@ -583,6 +623,41 @@
     .admin-empty-text {
       color: var(--text-secondary);
       font-size: 14px;
+    }
+
+    /* ===== Settings Dialog ===== */
+
+    #settings-dialog { max-width: 480px; }
+
+    .settings-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .settings-grid .form-group { margin-bottom: 0; }
+
+    .settings-grid select {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: var(--font);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+    }
+
+    .settings-grid select:focus { border-color: var(--accent); }
+
+    .settings-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text);
+      margin-top: 4px;
     }
 
     /* ===== Responsive ===== */
@@ -625,6 +700,12 @@
     <div class="header-actions">
       <button type="button" id="help-btn" class="header-btn" aria-label="Help and contact">Help</button>
       <button type="button" id="admin-btn" class="header-btn" aria-label="Admin: manage test data and gift cards">Admin</button>
+      <button type="button" id="settings-btn" class="header-btn header-icon-btn" aria-label="Open settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -686,7 +767,7 @@
         <li>Barcodes on the classroom inventory list are matched first—fast and works offline once the list has loaded.</li>
         <li>Items you have scanned before are remembered on this device.</li>
         <li>Otherwise the app looks up products online (Open Food, Beauty, and Products Facts, or Open Library for book ISBNs). Prices are generated for practice, not real retail prices.</li>
-        <li>If nothing matches, you can enter the product name and price manually.</li>
+        <li>If nothing matches, the app can auto-generate a maybe... listing and price, or you can switch to manual entry in Settings.</li>
         <li>Open <strong>Admin</strong> to seed sample gift cards and demo products.</li>
       </ul>
     </div>
@@ -763,6 +844,46 @@
     </div>
   </dialog>
 
+  <!-- Settings Dialog -->
+  <dialog id="settings-dialog" aria-label="Settings panel">
+    <div class="dialog-header">
+      <h2>Settings</h2>
+      <button type="button" class="dialog-close" aria-label="Close settings panel" id="settings-close-btn">&times;</button>
+    </div>
+    <div class="settings-grid">
+      <div class="form-group">
+        <label for="setting-theme">Visual Mode</label>
+        <select id="setting-theme">
+          <option value="auto">Auto (device setting)</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="setting-pricing-bias">Pricing Behavior</label>
+        <select id="setting-pricing-bias">
+          <option value="neutral">Neutral (current behavior)</option>
+          <option value="higher">Higher average pricing</option>
+          <option value="lower">Lower average pricing</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="setting-no-result">When Product Is Not Found</label>
+        <select id="setting-no-result">
+          <option value="auto_generate">Auto-generate listing and price</option>
+          <option value="manual_entry">Ask for manual product entry</option>
+        </select>
+      </div>
+      <label class="settings-toggle" for="setting-voice-enabled">
+        <input type="checkbox" id="setting-voice-enabled" checked>
+        Enable audible announcements
+      </label>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-accent" id="settings-done-btn">Done</button>
+    </div>
+  </dialog>
+
   <!-- Result Dialog -->
   <dialog id="result-dialog" aria-label="Transaction result">
     <div id="result-icon" class="result-icon"></div>
@@ -783,6 +904,17 @@
     let html5QrCode = null;
     let classroomLookup = null;
     let classroomLoadPromise = null;
+    let appSettings = null;
+    const SETTINGS_STORAGE_KEY = 'grahamCheckoutSettings';
+    const DEFAULT_SETTINGS = {
+      theme: 'auto',
+      pricingBias: 'neutral',
+      noResultBehavior: 'auto_generate',
+      voiceEnabled: true,
+    };
+    const systemThemeMediaQuery = window.matchMedia
+      ? window.matchMedia('(prefers-color-scheme: dark)')
+      : null;
 
     /* ============================================================
        DOM REFERENCES
@@ -799,12 +931,14 @@
       cameraBtn:      document.getElementById('camera-btn'),
       adminBtn:       document.getElementById('admin-btn'),
       helpBtn:        document.getElementById('help-btn'),
+      settingsBtn:    document.getElementById('settings-btn'),
       infoDialog:     document.getElementById('info-dialog'),
       infoDialogTitle: document.getElementById('info-dialog-title'),
       manualDialog:   document.getElementById('manual-dialog'),
       cameraDialog:   document.getElementById('camera-dialog'),
       paymentDialog:  document.getElementById('payment-dialog'),
       adminDialog:    document.getElementById('admin-dialog'),
+      settingsDialog: document.getElementById('settings-dialog'),
       resultDialog:   document.getElementById('result-dialog'),
       cameraTitle:    document.getElementById('camera-title'),
       paymentTotal:   document.getElementById('payment-total'),
@@ -816,6 +950,10 @@
       manualName:     document.getElementById('manual-name'),
       manualPrice:    document.getElementById('manual-price'),
       adminCardsList: document.getElementById('admin-cards-list'),
+      settingTheme:   document.getElementById('setting-theme'),
+      settingPricingBias: document.getElementById('setting-pricing-bias'),
+      settingNoResult: document.getElementById('setting-no-result'),
+      settingVoiceEnabled: document.getElementById('setting-voice-enabled'),
     };
 
     /* ============================================================
@@ -826,11 +964,24 @@
       return String(str).replace(/[&<>"']/g, c => map[c]);
     }
 
-    function announce(message) {
+    function speak(message) {
+      if (!appSettings || !appSettings.voiceEnabled) return;
+      if (typeof window.speechSynthesis === 'undefined' || typeof window.SpeechSynthesisUtterance === 'undefined') return;
+      const text = String(message || '').trim();
+      if (!text) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function announce(message, options) {
       dom.announcer.textContent = '';
       requestAnimationFrame(() => {
         requestAnimationFrame(() => { dom.announcer.textContent = message; });
       });
+      if (options && options.speak) speak(message);
     }
 
     function fmt(n) {
@@ -856,6 +1007,57 @@
 
     function saveGiftCards(cards) {
       localStorage.setItem('giftCards', JSON.stringify(cards));
+    }
+
+    function sanitizeSettings(value) {
+      const settings = Object.assign({}, DEFAULT_SETTINGS, value || {});
+      if (!['auto', 'light', 'dark'].includes(settings.theme)) settings.theme = DEFAULT_SETTINGS.theme;
+      if (!['neutral', 'higher', 'lower'].includes(settings.pricingBias)) settings.pricingBias = DEFAULT_SETTINGS.pricingBias;
+      if (!['auto_generate', 'manual_entry'].includes(settings.noResultBehavior)) settings.noResultBehavior = DEFAULT_SETTINGS.noResultBehavior;
+      settings.voiceEnabled = settings.voiceEnabled !== false;
+      return settings;
+    }
+
+    function getSettings() {
+      try {
+        return sanitizeSettings(JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || '{}'));
+      } catch {
+        return Object.assign({}, DEFAULT_SETTINGS);
+      }
+    }
+
+    function saveSettings(settings) {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(sanitizeSettings(settings)));
+    }
+
+    function applyThemePreference() {
+      if (!appSettings) return;
+      const mode = appSettings.theme;
+      if (mode === 'auto') {
+        const resolved = systemThemeMediaQuery && systemThemeMediaQuery.matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', resolved);
+      } else {
+        document.documentElement.setAttribute('data-theme', mode);
+      }
+    }
+
+    function syncSettingsForm() {
+      if (!appSettings) return;
+      dom.settingTheme.value = appSettings.theme;
+      dom.settingPricingBias.value = appSettings.pricingBias;
+      dom.settingNoResult.value = appSettings.noResultBehavior;
+      dom.settingVoiceEnabled.checked = appSettings.voiceEnabled;
+    }
+
+    function updateSettingsFromForm() {
+      appSettings = sanitizeSettings({
+        theme: dom.settingTheme.value,
+        pricingBias: dom.settingPricingBias.value,
+        noResultBehavior: dom.settingNoResult.value,
+        voiceEnabled: dom.settingVoiceEnabled.checked,
+      });
+      saveSettings(appSettings);
+      applyThemePreference();
     }
 
     /* ============================================================
@@ -895,7 +1097,7 @@
       data = data.trim();
       if (!data) return;
 
-      if (dom.manualDialog.open || dom.adminDialog.open || dom.infoDialog.open) return;
+      if (dom.manualDialog.open || dom.adminDialog.open || dom.infoDialog.open || dom.settingsDialog.open) return;
 
       if (appState === 'payment_rfid' || appState === 'payment_qr') {
         processCardPayment(data);
@@ -960,6 +1162,15 @@
       return classroomLoadPromise;
     }
 
+    function generateAutoListing(barcode) {
+      const normalized = getBarcodeVariants(barcode)[0] || String(barcode || '').trim();
+      return {
+        barcode: normalized || barcode,
+        name: 'maybe... Unknown Product (' + (normalized || barcode) + ')',
+        price: calculatePrice(normalized || barcode, [], ''),
+      };
+    }
+
     async function handleBarcodeScan(barcode) {
       const scanned = barcode;
       const inventory = getInventory();
@@ -1005,7 +1216,17 @@
         saveInventory(inventory);
         addToCart(item);
       } catch {
-        openManualEntry(scanned);
+        if (appSettings && appSettings.noResultBehavior === 'auto_generate') {
+          const generated = generateAutoListing(scanned);
+          getBarcodeVariants(scanned).forEach(function(code) {
+            inventory[code] = generated;
+          });
+          saveInventory(inventory);
+          addToCart(generated);
+          announce('Product not found. Added ' + generated.name + ' for ' + fmt(generated.price) + '.', { speak: true });
+        } else {
+          openManualEntry(scanned);
+        }
       }
     }
 
@@ -1153,7 +1374,13 @@
         price *= 0.85;
       }
 
-      return Math.floor(price) + 0.99;
+      if (appSettings && appSettings.pricingBias === 'higher') {
+        price *= 1.12;
+      } else if (appSettings && appSettings.pricingBias === 'lower') {
+        price *= 0.88;
+      }
+
+      return Math.max(0.99, Math.floor(price) + 0.99);
     }
 
     /* ============================================================
@@ -1167,7 +1394,7 @@
         cart.push({ barcode: item.barcode, name: item.name, price: item.price, qty: 1 });
       }
       renderCart();
-      announce('Added ' + item.name + ', ' + fmt(item.price));
+      announce('Scanned ' + item.name + ' for ' + fmt(item.price) + '.', { speak: true });
     }
 
     function removeFromCart(index) {
@@ -1294,6 +1521,10 @@
       cardId = cardId.trim();
       const cards = getGiftCards();
       const total = getTotal();
+      const purchasedItems = cart.map(function(item) {
+        const lineTotal = item.price * item.qty;
+        return item.qty + ' x ' + item.name + ' for ' + fmt(lineTotal);
+      }).join('. ');
 
       closeAllDialogs();
       appState = 'idle';
@@ -1320,6 +1551,9 @@
 
       showResult('success', 'Payment Successful',
         'Charged: ' + fmt(total) + '\nRemaining balance: ' + fmt(remaining));
+      if (purchasedItems) {
+        announce(purchasedItems + '. Customer paid ' + fmt(total) + '.', { speak: true });
+      }
     }
 
     dom.chargeBtn.addEventListener('click', startPayment);
@@ -1410,7 +1644,7 @@
     });
 
     function closeAllDialogs() {
-      [dom.cameraDialog, dom.paymentDialog, dom.resultDialog, dom.infoDialog].forEach(function(d) {
+      [dom.cameraDialog, dom.paymentDialog, dom.resultDialog, dom.infoDialog, dom.settingsDialog].forEach(function(d) {
         if (d.open) d.close();
       });
       stopCameraScanner();
@@ -1429,12 +1663,13 @@
       if (!container) return;
 
       container.innerHTML = '';
+      var theme = getComputedStyle(document.documentElement);
       new QRCode(container, {
         text: cardId,
         width: 128,
         height: 128,
-        colorDark: '#1a1a1a',
-        colorLight: '#ffffff',
+        colorDark: theme.getPropertyValue('--text').trim() || '#1a1a1a',
+        colorLight: theme.getPropertyValue('--surface').trim() || '#ffffff',
         correctLevel: QRCode.CorrectLevel.H,
       });
 
@@ -1496,6 +1731,25 @@
       dom.adminDialog.showModal();
     });
 
+    dom.settingsBtn.addEventListener('click', function() {
+      syncSettingsForm();
+      dom.settingsDialog.showModal();
+    });
+
+    function closeSettingsDialog() {
+      dom.settingsDialog.close();
+    }
+
+    ['change', 'input'].forEach(function(eventName) {
+      dom.settingTheme.addEventListener(eventName, updateSettingsFromForm);
+      dom.settingPricingBias.addEventListener(eventName, updateSettingsFromForm);
+      dom.settingNoResult.addEventListener(eventName, updateSettingsFromForm);
+      dom.settingVoiceEnabled.addEventListener(eventName, updateSettingsFromForm);
+    });
+
+    document.getElementById('settings-close-btn').addEventListener('click', closeSettingsDialog);
+    document.getElementById('settings-done-btn').addEventListener('click', closeSettingsDialog);
+
     document.getElementById('admin-close-btn').addEventListener('click', function() {
       dom.adminDialog.close();
     });
@@ -1535,10 +1789,24 @@
        INIT
        ============================================================ */
     function initApp() {
+      appSettings = getSettings();
+      applyThemePreference();
+      syncSettingsForm();
       renderCart();
       ensureClassroomLoaded();
       if (!localStorage.getItem(WELCOME_SEEN_KEY)) {
         openInfoDialog('welcome');
+      }
+    }
+
+    if (systemThemeMediaQuery) {
+      const handleSystemThemeChange = function() {
+        if (appSettings && appSettings.theme === 'auto') applyThemePreference();
+      };
+      if (typeof systemThemeMediaQuery.addEventListener === 'function') {
+        systemThemeMediaQuery.addEventListener('change', handleSystemThemeChange);
+      } else if (typeof systemThemeMediaQuery.addListener === 'function') {
+        systemThemeMediaQuery.addListener(handleSystemThemeChange);
       }
     }
 
