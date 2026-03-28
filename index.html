@@ -769,7 +769,7 @@
         <li>Barcodes on the classroom inventory list are matched first—fast and works offline once the list has loaded.</li>
         <li>Items you have scanned before are remembered on this device.</li>
         <li>Otherwise the app looks up products online (Open Food, Beauty, and Products Facts, or Open Library for book ISBNs). Prices are generated for practice, not real retail prices.</li>
-        <li>If nothing matches, the app can auto-generate a maybe... listing and price, or you can switch to manual entry in Settings.</li>
+        <li>If nothing matches, the app can auto-generate a plausible practice name and price, or you can switch to manual entry in Settings.</li>
         <li>Open <strong>Admin</strong> to seed sample gift cards and demo products.</li>
       </ul>
     </div>
@@ -1327,12 +1327,45 @@
       return classroomLoadPromise;
     }
 
+    const AUTO_PRODUCT_NAMES = [
+      'Assorted Trail Mix', 'Sparkling Water 12-Pack', 'Classic Granola Bars', 'All-Purpose Cleaner',
+      'Organic Applesauce Cups', 'Whole Grain Crackers', 'Dark Chocolate Bar', 'Greek Yogurt Tub',
+      'Almond Milk Half Gallon', 'Frozen Vegetable Blend', 'Brown Rice Bag', 'Pasta Sauce Jar',
+      'Canned Black Beans', 'Chicken Broth Carton', 'Olive Oil Bottle', 'Honey Squeeze Bear',
+      'Peanut Butter Jar', 'Strawberry Jam', 'Instant Oatmeal Box', 'Breakfast Cereal',
+      'Tortilla Chips Bag', 'Salsa Medium Jar', 'String Cheese Pack', 'Deli Turkey Slices',
+      'Baby Spinach Tub', 'Baby Carrots Bag', 'Bananas Bunch', 'Avocados Two-Pack',
+      'Laundry Detergent Pod', 'Dish Soap Refill', 'Paper Towel Roll', 'Toilet Paper Pack',
+      'AA Batteries 8-Pack', 'Hand Sanitizer Pump', 'Facial Tissues Box', 'Trash Bags Tall',
+      'Ziploc Sandwich Bags', 'Aluminum Foil Roll', 'Plastic Wrap Box', 'Sponges 3-Pack',
+      'Energy Drink Can', 'Iced Tea Bottles', 'Sports Drink 6-Pack', 'Fruit Snacks Pouch',
+      'Protein Powder Tub', 'Vitamin Gummies', 'Electrolyte Mix', 'Herbal Tea Box',
+      'Dog Treats Bag', 'Cat Food Can', 'Bird Seed Bag', 'Air Freshener Plug',
+      'Light Bulbs LED', 'Extension Cord', 'USB Cable Pack', 'Phone Charger Block',
+    ];
+
+    function hashBarcodeForName(barcode) {
+      const d = String(barcode || '').replace(/\D/g, '');
+      let h = 2166136261;
+      for (let i = 0; i < d.length; i++) {
+        h ^= d.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    }
+
+    function plausibleAutoProductName(barcode) {
+      const h = hashBarcodeForName(barcode);
+      return AUTO_PRODUCT_NAMES[h % AUTO_PRODUCT_NAMES.length];
+    }
+
     function generateAutoListing(barcode) {
       const normalized = getBarcodeVariants(barcode)[0] || String(barcode || '').trim();
+      const key = normalized || barcode;
       return {
-        barcode: normalized || barcode,
-        name: 'maybe... Unknown Product (' + (normalized || barcode) + ')',
-        price: calculatePrice(normalized || barcode, [], ''),
+        barcode: key,
+        name: 'maybe ' + plausibleAutoProductName(key),
+        price: calculatePrice(key, [], ''),
       };
     }
 
