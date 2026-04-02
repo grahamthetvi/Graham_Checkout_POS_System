@@ -950,6 +950,7 @@
     let classroomLoadPromise = null;
     let appSettings = null;
     let activeCashEditCardId = '';
+    let barcodeScanChain = Promise.resolve();
     const SETTINGS_STORAGE_KEY = 'grahamCheckoutSettings';
     const CURRENCY_OPTIONS = {
       USD: { rate: 1, locale: 'en-US', fractionDigits: 2 },
@@ -1050,6 +1051,27 @@
       if (options && options.speak) speak(message);
     }
 
+    function notifyStorageFailure() {
+      announce('Could not save data. Storage may be full or unavailable.');
+    }
+
+    function fetchWithTimeout(url, options, timeoutMs) {
+      const base = options || {};
+      const controller = new AbortController();
+      const parentSignal = base.signal;
+      if (parentSignal) {
+        if (parentSignal.aborted) {
+          controller.abort();
+        } else {
+          parentSignal.addEventListener('abort', function() { controller.abort(); }, { once: true });
+        }
+      }
+      const timer = setTimeout(function() { controller.abort(); }, timeoutMs);
+      return fetch(url, Object.assign({}, base, { signal: controller.signal })).finally(function() {
+        clearTimeout(timer);
+      });
+    }
+
     function getCurrencyMeta(currencyCode) {
       const code = currencyCode || (appSettings && appSettings.currency) || DEFAULT_SETTINGS.currency;
       return CURRENCY_OPTIONS[code] || CURRENCY_OPTIONS[DEFAULT_SETTINGS.currency];
@@ -1074,20 +1096,37 @@
       return roundCurrency(usdAmount * toMeta.rate, toCurrency);
     }
 
+    let currencyFormatCacheKey = '';
+    let currencyFormatInstance = null;
+
+    function getCurrencyNumberFormatter() {
+      const code = (appSettings && appSettings.currency) || DEFAULT_SETTINGS.currency;
+      const meta = getCurrencyMeta(code);
+      const key = code + '\0' + meta.locale + '\0' + meta.fractionDigits;
+      if (currencyFormatCacheKey !== key) {
+        currencyFormatCacheKey = key;
+        currencyFormatInstance = null;
+        try {
+          currencyFormatInstance = new Intl.NumberFormat(meta.locale, {
+            style: 'currency',
+            currency: code,
+            minimumFractionDigits: meta.fractionDigits,
+            maximumFractionDigits: meta.fractionDigits,
+          });
+        } catch {
+          currencyFormatInstance = null;
+        }
+      }
+      return currencyFormatInstance;
+    }
+
     function fmt(n) {
       const code = (appSettings && appSettings.currency) || DEFAULT_SETTINGS.currency;
       const safe = Number.isFinite(n) ? n : 0;
       const meta = getCurrencyMeta(code);
-      try {
-        return new Intl.NumberFormat(meta.locale, {
-          style: 'currency',
-          currency: code,
-          minimumFractionDigits: meta.fractionDigits,
-          maximumFractionDigits: meta.fractionDigits,
-        }).format(safe);
-      } catch {
-        return code + ' ' + safe.toFixed(meta.fractionDigits);
-      }
+      const formatter = getCurrencyNumberFormatter();
+      if (formatter) return formatter.format(safe);
+      return code + ' ' + safe.toFixed(meta.fractionDigits);
     }
 
     function formatTaxRate(rate) {
@@ -1141,7 +1180,13 @@
     }
 
     function saveInventory(inv) {
-      localStorage.setItem('inventory', JSON.stringify(inv));
+      try {
+        localStorage.setItem('inventory', JSON.stringify(inv));
+        return true;
+      } catch {
+        notifyStorageFailure();
+        return false;
+      }
     }
 
     function getGiftCards() {
@@ -1150,7 +1195,13 @@
     }
 
     function saveGiftCards(cards) {
-      localStorage.setItem('giftCards', JSON.stringify(cards));
+      try {
+        localStorage.setItem('giftCards', JSON.stringify(cards));
+        return true;
+      } catch {
+        notifyStorageFailure();
+        return false;
+      }
     }
 
     function sanitizeSettings(value) {
@@ -1178,7 +1229,13 @@
     }
 
     function saveSettings(settings) {
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(sanitizeSettings(settings)));
+      try {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(sanitizeSettings(settings)));
+        return true;
+      } catch {
+        notifyStorageFailure();
+        return false;
+      }
     }
 
     function applyThemePreference() {
@@ -1204,7 +1261,7 @@
 
     function updateSettingsFromForm() {
       const previousSettings = appSettings ? Object.assign({}, appSettings) : Object.assign({}, DEFAULT_SETTINGS);
-      appSettings = sanitizeSettings({
+      const nextSettings = sanitizeSettings({
         theme: dom.settingTheme.value,
         pricingBias: dom.settingPricingBias.value,
         currency: dom.settingCurrency.value,
@@ -1212,10 +1269,22 @@
         noResultBehavior: dom.settingNoResult.value,
         voiceEnabled: dom.settingVoiceEnabled.checked,
       });
-      if (previousSettings.currency !== appSettings.currency) {
-        convertStoredMonetaryValues(previousSettings.currency, appSettings.currency);
+      if (previousSettings.currency !== nextSettings.currency) {
+        convertStoredMonetaryValues(previousSettings.currency, nextSettings.currency);
       }
-      saveSettings(appSettings);
+      if (!saveSettings(nextSettings)) {
+        if (previousSettings.currency !== nextSettings.currency) {
+          convertStoredMonetaryValues(nextSettings.currency, previousSettings.currency);
+        }
+        appSettings = previousSettings;
+        syncSettingsForm();
+        renderCart();
+        if (dom.paymentDialog.open) dom.paymentTotal.textContent = fmt(getTotal());
+        if (dom.adminDialog.open) renderAdminCards();
+        if (dom.cashEditDialog.open) updateCashEditPreview();
+        return;
+      }
+      appSettings = nextSettings;
       applyThemePreference();
       updateTaxLabel();
       updateCurrencyUiText();
@@ -1245,7 +1314,10 @@
           const data = scanBuffer;
           scanBuffer = '';
           if (document.activeElement && document.activeElement.tagName === 'INPUT') {
-            document.activeElement.value = document.activeElement.value.slice(0, -data.length);
+            const el = document.activeElement;
+            if (el.value.endsWith(data)) {
+              el.value = el.value.slice(0, -data.length);
+            }
           }
           handleScan(data);
         }
@@ -1263,11 +1335,14 @@
       if (!data) return;
 
       if (dom.manualDialog.open || dom.adminDialog.open || dom.cashEditDialog.open || dom.infoDialog.open || dom.settingsDialog.open) return;
+      if (dom.cameraDialog.open || dom.resultDialog.open) return;
 
       if (appState === 'payment_rfid' || appState === 'payment_qr') {
         processCardPayment(data);
       } else {
-        handleBarcodeScan(data);
+        barcodeScanChain = barcodeScanChain.then(function() {
+          return handleBarcodeScan(data);
+        }).catch(function() {});
       }
     }
 
@@ -1440,6 +1515,7 @@
       const variants = getBarcodeVariants(barcode);
       const codesToTry = variants.length ? variants : [barcode];
       const domains = ['openfoodfacts', 'openbeautyfacts', 'openproductsfacts'];
+      const cooperative = new AbortController();
       const urls = [];
       codesToTry.forEach(function(code) {
         domains.forEach(function(domain) {
@@ -1451,11 +1527,14 @@
       });
 
       return Promise.any(
-        urls.map(({ code, url }) =>
-          fetch(url, { signal: AbortSignal.timeout(6000) })
-            .then(r => r.json())
-            .then(data => {
+        urls.map(function(entry) {
+          const code = entry.code;
+          const url = entry.url;
+          return fetchWithTimeout(url, { signal: cooperative.signal }, 6000)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
               if (data.status !== 1 || !data.product) throw new Error('Not found');
+              cooperative.abort();
               const product = data.product;
               return {
                 barcode: code,
@@ -1463,8 +1542,8 @@
                 categories: product.categories_tags || [],
                 brand: product.brands || '',
               };
-            })
-        )
+            });
+        })
       );
     }
 
@@ -1473,7 +1552,7 @@
       if (!isbn) throw new Error('Not an ISBN barcode');
 
       const url = 'https://openlibrary.org/api/books?bibkeys=ISBN:' + isbn + '&format=json&jscmd=data';
-      const data = await fetch(url, { signal: AbortSignal.timeout(6000) }).then(r => r.json());
+      const data = await fetchWithTimeout(url, {}, 6000).then(function(r) { return r.json(); });
       const entry = data['ISBN:' + isbn];
       if (!entry) throw new Error('Book not found');
 
@@ -1535,6 +1614,8 @@
       'textbook':       [20, 120],
     };
 
+    const CATEGORY_PRICE_ENTRIES = Object.entries(CATEGORY_PRICES);
+
     const PREMIUM_BRANDS = [
       'organic valley', 'whole foods', 'starbucks', 'kind', 'rxbar', 'clif',
       'blue diamond', 'smartwater', 'fiji', 'voss', 'perrier', "newman's own",
@@ -1552,7 +1633,7 @@
       if (categories && categories.length > 0) {
         for (const cat of categories) {
           const cl = cat.toLowerCase().replace(/^en:/, '');
-          for (const [key, prices] of Object.entries(CATEGORY_PRICES)) {
+          for (const [key, prices] of CATEGORY_PRICE_ENTRIES) {
             if (cl.includes(key)) { range = prices; break; }
           }
           if (range) break;
@@ -1613,17 +1694,29 @@
       announce('Cart cleared');
     }
 
+    function getCartMoney() {
+      const currencyCode = appSettings ? appSettings.currency : DEFAULT_SETTINGS.currency;
+      const rate = appSettings ? appSettings.taxRate : DEFAULT_SETTINGS.taxRate;
+      let subtotal = 0;
+      for (let i = 0; i < cart.length; i++) {
+        const line = cart[i];
+        subtotal += line.price * line.qty;
+      }
+      const tax = roundCurrency(subtotal * rate / 100, currencyCode);
+      const total = roundCurrency(subtotal + tax, currencyCode);
+      return { subtotal: subtotal, tax: tax, total: total };
+    }
+
     function getSubtotal() {
-      return cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+      return getCartMoney().subtotal;
     }
 
     function getTax() {
-      const rate = appSettings ? appSettings.taxRate : DEFAULT_SETTINGS.taxRate;
-      return roundCurrency(getSubtotal() * rate / 100, appSettings ? appSettings.currency : DEFAULT_SETTINGS.currency);
+      return getCartMoney().tax;
     }
 
     function getTotal() {
-      return roundCurrency(getSubtotal() + getTax(), appSettings ? appSettings.currency : DEFAULT_SETTINGS.currency);
+      return getCartMoney().total;
     }
 
     function renderCart() {
@@ -1650,9 +1743,10 @@
         ).join('');
       }
 
-      const sub = getSubtotal();
-      const tax = getTax();
-      const total = getTotal();
+      const money = getCartMoney();
+      const sub = money.subtotal;
+      const tax = money.tax;
+      const total = money.total;
       dom.subtotal.textContent = fmt(sub);
       dom.tax.textContent = fmt(tax);
       dom.total.textContent = fmt(total);
@@ -1689,7 +1783,7 @@
       const item = { barcode, name, price: roundCurrency(price) };
       const inv = getInventory();
       inv[barcode] = item;
-      saveInventory(inv);
+      if (!saveInventory(inv)) return;
 
       dom.manualDialog.close();
       addToCart(item);
@@ -1743,8 +1837,14 @@
         return;
       }
 
+      const prevBalance = cards[cardId].balance;
       cards[cardId].balance = roundCurrency(cards[cardId].balance - total);
-      saveGiftCards(cards);
+      if (!saveGiftCards(cards)) {
+        cards[cardId].balance = prevBalance;
+        showResult('error', 'Payment Failed',
+          'Could not save the new card balance. Try again or check storage.');
+        return;
+      }
 
       const remaining = cards[cardId].balance;
       cart = [];
@@ -1780,24 +1880,26 @@
       dom.cameraTitle.textContent = context === 'payment_qr' ? 'Scan Payment QR' : 'Scan Product';
       dom.cameraDialog.showModal();
 
-      setTimeout(function() {
-        document.getElementById('camera-viewfinder').innerHTML = '';
-        html5QrCode = new Html5Qrcode('camera-viewfinder');
-        html5QrCode.start(
-          { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
-          function(decodedText) {
-            stopCameraScanner();
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          document.getElementById('camera-viewfinder').innerHTML = '';
+          html5QrCode = new Html5Qrcode('camera-viewfinder');
+          html5QrCode.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+            function(decodedText) {
+              stopCameraScanner();
+              dom.cameraDialog.close();
+              handleScan(decodedText);
+            },
+            function() {}
+          ).catch(function() {
+            announce('Camera access denied or unavailable.');
             dom.cameraDialog.close();
-            handleScan(decodedText);
-          },
-          function() {}
-        ).catch(function() {
-          announce('Camera access denied or unavailable.');
-          dom.cameraDialog.close();
-          appState = 'idle';
+            appState = 'idle';
+          });
         });
-      }, 350);
+      });
     }
 
     function stopCameraScanner() {
@@ -1890,13 +1992,13 @@
         'E5F6G7H8': { balance: seededBalance },
         'I9J0K1L2': { balance: seededBalance },
       });
-      saveGiftCards(cards);
+      if (!saveGiftCards(cards)) return;
 
       var inv = getInventory();
       inv['0012345678905'] = { barcode: '0012345678905', name: 'Cola Classic 12oz', price: convertUsdToCurrency(1.99) };
       inv['0012345678912'] = { barcode: '0012345678912', name: 'Kettle Chips Sea Salt', price: convertUsdToCurrency(3.99) };
       inv['0012345678929'] = { barcode: '0012345678929', name: 'Whole Wheat Bread', price: convertUsdToCurrency(4.99) };
-      saveInventory(inv);
+      if (!saveInventory(inv)) return;
 
       renderAdminCards();
       announce('Test data loaded. 3 gift cards with $50 each and 3 sample products added.');
@@ -2004,8 +2106,13 @@
         return;
       }
 
+      const prevBalance = cards[cardId].balance;
       cards[cardId].balance = roundCurrency(nextBalance);
-      saveGiftCards(cards);
+      if (!saveGiftCards(cards)) {
+        cards[cardId].balance = prevBalance;
+        dom.cashEditError.textContent = 'Could not save. Storage may be full.';
+        return;
+      }
       dom.cashEditDialog.close();
       renderAdminCards();
       announce('Updated card ' + cardId + ' balance to ' + fmt(cards[cardId].balance) + '.');
