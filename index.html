@@ -105,6 +105,41 @@
       height: 18px;
     }
 
+    .header-actions .header-tip {
+      font-size: 12px;
+      font-weight: 600;
+      color: #713f12;
+      background: #fbbf24;
+      border: 1px solid #d97706;
+      border-radius: var(--radius);
+      padding: 6px 12px;
+      text-decoration: none;
+      font-family: var(--font);
+      cursor: pointer;
+      line-height: 1.2;
+    }
+
+    .header-actions .header-tip:hover {
+      background: #fcd34d;
+      border-color: #b45309;
+      color: #422006;
+    }
+
+    .header-actions .header-tip:active {
+      background: #f59e0b;
+    }
+
+    :root[data-theme='dark'] .header-actions .header-tip {
+      color: #1c1917;
+      background: #fbbf24;
+      border-color: #f59e0b;
+    }
+
+    :root[data-theme='dark'] .header-actions .header-tip:hover {
+      background: #fcd34d;
+      color: #1c1917;
+    }
+
     #info-dialog {
       max-width: 520px;
     }
@@ -693,9 +728,49 @@
       white-space: nowrap;
       border: 0;
     }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      z-index: 10000;
+      padding: 10px 18px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      font-family: var(--font);
+    }
+
+    .skip-link:focus {
+      left: 12px;
+      top: 12px;
+      outline: 3px solid var(--text);
+      outline-offset: 2px;
+    }
+
+    :root[data-theme='dark'] .skip-link:focus {
+      outline-color: #fff;
+    }
+
+    button:focus-visible,
+    .header-btn:focus-visible,
+    .header-tip:focus-visible,
+    .btn:focus-visible,
+    .dialog-close:focus-visible,
+    .delete-btn:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
+
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <header role="banner">
     <h1>Graham Checkout</h1>
@@ -708,10 +783,11 @@
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
         </svg>
       </button>
+      <a href="https://buymeacoffee.com/grahamthetvi" class="header-tip" target="_blank" rel="noopener noreferrer" aria-label="Tip on Buy Me a Coffee (opens in new tab)">Tip me</a>
     </div>
   </header>
 
-  <main>
+  <main id="main-content" tabindex="-1">
     <section class="cart-section" aria-label="Shopping cart">
       <div class="cart-header">
         <h2>Current Sale</h2>
@@ -719,6 +795,7 @@
       </div>
       <div class="cart-items" role="region" aria-label="Cart items" tabindex="0">
         <table>
+          <caption class="sr-only">Line items for the current sale</caption>
           <thead>
             <tr>
               <th scope="col">Item</th>
@@ -747,7 +824,7 @@
       </div>
       <div class="actions-spacer"></div>
       <button type="button" id="camera-btn" class="btn btn-accent btn-lg">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         Scan with Camera
       </button>
       <button type="button" id="charge-btn" class="btn btn-success btn-lg" disabled>
@@ -780,8 +857,8 @@
   </dialog>
 
   <!-- Manual Entry Dialog -->
-  <dialog id="manual-dialog" aria-label="Add product manually">
-    <h2>Add Product</h2>
+  <dialog id="manual-dialog" aria-labelledby="manual-dialog-title">
+    <h2 id="manual-dialog-title">Add Product</h2>
     <div class="form-group">
       <label for="manual-barcode">Barcode</label>
       <input type="text" id="manual-barcode" readonly>
@@ -801,23 +878,23 @@
   </dialog>
 
   <!-- Camera Scanner Dialog -->
-  <dialog id="camera-dialog" aria-label="Camera scanner">
+  <dialog id="camera-dialog" aria-labelledby="camera-title" aria-describedby="camera-hint">
     <div class="dialog-header">
       <h2 id="camera-title">Scan Product</h2>
       <button type="button" class="dialog-close" aria-label="Close scanner" id="camera-close-btn">&times;</button>
     </div>
     <div id="camera-viewfinder"></div>
-    <p class="camera-hint">Position barcode or QR code in front of camera</p>
+    <p class="camera-hint" id="camera-hint">Position barcode or QR code in front of camera</p>
   </dialog>
 
   <!-- Payment Dialog -->
-  <dialog id="payment-dialog" aria-label="Payment">
-    <h2>Payment</h2>
-    <div class="payment-total" id="payment-total">$0.00</div>
+  <dialog id="payment-dialog" aria-labelledby="payment-heading">
+    <h2 id="payment-heading">Payment</h2>
+    <div class="payment-total" id="payment-total" aria-live="polite">$0.00</div>
     <div class="payment-options">
       <div class="payment-option rfid-option" role="status" aria-label="Tap RFID card to pay">
         <div class="option-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         </div>
         <div class="option-text">Tap RFID Card</div>
         <div class="option-hint">Waiting for card...</div>
@@ -825,7 +902,7 @@
       <div class="payment-divider">or</div>
       <button type="button" class="payment-option qr-option" id="qr-pay-btn">
         <div class="option-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><path d="M14 14h4v4h-4z"/><path d="M20 14h2v2h-2z"/><path d="M14 20h2v2h-2z"/><path d="M20 20h2v2h-2z"/></svg>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><path d="M14 14h4v4h-4z"/><path d="M20 14h2v2h-2z"/><path d="M14 20h2v2h-2z"/><path d="M20 20h2v2h-2z"/></svg>
         </div>
         <div class="option-text">Scan QR Code</div>
       </button>
@@ -929,8 +1006,8 @@
   </dialog>
 
   <!-- Result Dialog -->
-  <dialog id="result-dialog" aria-label="Transaction result">
-    <div id="result-icon" class="result-icon"></div>
+  <dialog id="result-dialog" aria-labelledby="result-title" aria-describedby="result-message">
+    <div id="result-icon" class="result-icon" aria-hidden="true"></div>
     <h2 id="result-title"></h2>
     <p id="result-message"></p>
     <button type="button" class="btn btn-accent full-width-btn" id="result-done-btn">Done</button>
@@ -1735,7 +1812,7 @@
             '<td><button class="delete-btn" aria-label="Remove ' + escapeHtml(item.name) +
               '" data-index="' + i + '">' +
               '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-              'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+              'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
               '<polyline points="3 6 5 6 21 6"/>' +
               '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
               '</svg></button></td>' +
@@ -1809,6 +1886,9 @@
       dom.paymentTotal.textContent = fmt(total);
       appState = 'payment_rfid';
       dom.paymentDialog.showModal();
+      requestAnimationFrame(function() {
+        document.getElementById('qr-pay-btn').focus();
+      });
       announce('Ready to accept payment of ' + fmt(total) + '. Tap RFID card or scan QR code.');
     }
 
@@ -1881,6 +1961,7 @@
       dom.cameraDialog.showModal();
 
       requestAnimationFrame(function() {
+        document.getElementById('camera-close-btn').focus();
         requestAnimationFrame(function() {
           document.getElementById('camera-viewfinder').innerHTML = '';
           html5QrCode = new Html5Qrcode('camera-viewfinder');
@@ -1939,7 +2020,10 @@
       dom.resultTitle.textContent = title;
       dom.resultMessage.textContent = message;
       dom.resultDialog.showModal();
-      announce(title + '. ' + message);
+      requestAnimationFrame(function() {
+        document.getElementById('result-done-btn').focus();
+      });
+      announce(title + '. ' + String(message).replace(/\n+/g, '. '));
     }
 
     document.getElementById('result-done-btn').addEventListener('click', function() {
@@ -2121,6 +2205,9 @@
     dom.adminBtn.addEventListener('click', function() {
       renderAdminCards();
       dom.adminDialog.showModal();
+      requestAnimationFrame(function() {
+        document.getElementById('seed-btn').focus();
+      });
     });
 
     dom.adminCardsList.addEventListener('click', function(e) {
@@ -2133,6 +2220,9 @@
     dom.settingsBtn.addEventListener('click', function() {
       syncSettingsForm();
       dom.settingsDialog.showModal();
+      requestAnimationFrame(function() {
+        dom.settingTheme.focus();
+      });
     });
 
     function closeSettingsDialog() {
@@ -2182,6 +2272,9 @@
         ? 'Welcome to Graham Checkout'
         : 'Help';
       dom.infoDialog.showModal();
+      requestAnimationFrame(function() {
+        document.getElementById('info-dialog-close-btn').focus();
+      });
     }
 
     dom.helpBtn.addEventListener('click', function() {
